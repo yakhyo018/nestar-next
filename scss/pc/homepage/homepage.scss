@@ -122,6 +122,12 @@
 			flex-direction: row;
 			.container {
 				flex-direction: column;
+				/* fixed 1300px pushed the right-edge card (and its like button) off-screen
+				   on viewports narrower than ~1251px */
+				width: 100%;
+				max-width: 1300px;
+				padding: 0 20px;
+				box-sizing: border-box;
 				.card-box {
 					position: relative;
 					margin-top: 64px;
