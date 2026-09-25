@@ -23,11 +23,21 @@ export const getStaticProps = async ({ locale }: any) => ({
 	},
 });
 
+/** Bo'sh ro'yxatlarni olib tashlaydi: backend `[]` ni "hech narsa mos emas" deb tushunadi **/
+const parseSearchFilter = (input: string): PropertiesInquiry => {
+	const parsed = JSON.parse(input);
+	const search = { ...(parsed.search ?? {}) };
+	Object.keys(search).forEach((key) => {
+		if (Array.isArray(search[key]) && search[key].length === 0) delete search[key];
+	});
+	return { ...parsed, search };
+};
+
 const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const [searchFilter, setSearchFilter] = useState<PropertiesInquiry>(
-		router?.query?.input ? JSON.parse(router?.query?.input as string) : initialInput,
+		router?.query?.input ? parseSearchFilter(router?.query?.input as string) : initialInput,
 	);
 	const [properties, setProperties] = useState<Property[]>([]);
 	const [total, setTotal] = useState<number>(0);
@@ -56,7 +66,7 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 	/** LIFECYCLES **/
 	useEffect(() => {
 		if (router.query.input) {
-			const inputObj = JSON.parse(router?.query?.input as string);
+			const inputObj = parseSearchFilter(router?.query?.input as string);
 			setSearchFilter(inputObj);
 		}
 
@@ -69,10 +79,10 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 
 	/** HANDLERS **/
 	const handlePaginationChange = async (event: ChangeEvent<unknown>, value: number) => {
-		searchFilter.page = value;
+		const newFilter = { ...searchFilter, page: value };
 		await router.push(
-			`/property?input=${JSON.stringify(searchFilter)}`,
-			`/property?input=${JSON.stringify(searchFilter)}`,
+			`/property?input=${JSON.stringify(newFilter)}`,
+			`/property?input=${JSON.stringify(newFilter)}`,
 			{
 				scroll: false,
 			},
@@ -88,7 +98,7 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 				variables: { input: id },
 			});
 
-			await getPropertiesRefetch({ input: initialInput });
+			await getPropertiesRefetch({ input: searchFilter });
 
 			await sweetTopSmallSuccessAlert('success', 800);
 		} catch (err: any) {
